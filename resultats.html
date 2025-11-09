@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Résultats – Diagnostic RSE | STV Law</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin:0; background:#f7faf6; color:#163b2b; }
+    .container { max-width:920px; margin:36px auto; padding:28px; background:#fff; border-radius:12px; box-shadow:0 6px 24px rgba(12,34,24,0.06); }
+    h1 { margin:0 0 16px 0; font-size:1.6rem; }
+    .lead { color:#2f6b53; margin-bottom:24px; }
+
+    /* Onglets */
+    .tabs { display:flex; gap:12px; margin-bottom:20px; }
+    .tab { flex:1; padding:12px 16px; background:#e9f6ef; border-radius:8px; text-align:center; font-weight:700; cursor:pointer; user-select:none; }
+    .tab.active { background:#2d6a4f; color:#fff; }
+
+    /* Contenu onglets */
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+
+    .score-circle { width:90px; height:90px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.6rem; font-weight:700; margin-bottom:12px; }
+    .score-low { background:#ffe8e8; color:#a30000; }
+    .score-med { background:#fff4d6; color:#8a5c00; }
+    .score-high { background:#e0ffe8; color:#1b4332; }
+    .score-top { background:#d0f0ff; color:#004b6b; }
+
+    .bar { background:#e8f6ee; border-radius:999px; height:10px; overflow:hidden; margin-top:6px; margin-bottom:6px; }
+    .bar-fill { height:10px; background:#2d6a4f; width:0%; transition:width .4s ease; }
+
+    .encadre-risque { background:#fff4e0; border-left:4px solid #ffb347; padding:12px 14px; border-radius:8px; margin:12px 0; color:#804000; font-size:0.95rem; }
+
+    .encadre-synthese { background:#fff7d9; border-left:6px solid #f5b301; padding:18px 20px; border-radius:10px; margin-top:28px; color:#2f2f2f; line-height:1.5; }
+
+    .recommendation-box { background:#fffbea; border:1px solid #ffe58f; border-radius:8px; padding:16px 18px; margin-top:16px; color:#4b3b00; line-height:1.5; }
+
+    .footer-links { margin-top:36px; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; }
+    button { background:#1b4332; color:white; border:none; padding:10px 18px; border-radius:8px; cursor:pointer; font-weight:700; transition:background .2s ease; }
+    button:hover { background:#163b2b; }
+    button.secondary { background:#e9f6ef; color:#1b4332; border:1px solid #dbeede; }
+    .cta { background:#004b23; color:#fff; border:none; font-size:1rem; padding:12px 20px; border-radius:8px; cursor:pointer; font-weight:700; text-decoration:none; display:inline-block; }
+    .cta:hover { background:#002e16; }
+
+    .disclaimer { margin-top:30px; font-size:0.85rem; color:#6b6b6b; line-height:1.4; text-align:center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Résultats – Diagnostic RSE</h1>
+    <p class="lead">Votre niveau de maturité RSE a été estimé à partir de vos réponses. Cette analyse met en lumière vos points forts et les zones de non-conformité potentielles.</p>
+
+    <!-- Onglets -->
+    <div class="tabs">
+      <div class="tab active" data-tab="resume">Résumé</div>
+      <div class="tab" data-tab="recommendations">Recommendations</div>
+    </div>
+
+    <!-- Contenu Résumé -->
+    <div id="resume" class="tab-content active">
+      <div id="summary" style="display:flex;align-items:center;gap:20px;">
+        <div id="scoreCircle" class="score-circle">–</div>
+        <div>
+          <div><strong id="companyName">Votre entreprise</strong></div>
+          <div id="scoreText" class="small"></div>
+        </div>
+      </div>
+
+      <div id="details"></div>
+
+      <div id="risque-juridique"></div>
+      <div id="synthese-encadre"></div>
+
+      <div class="disclaimer">
+        Ce diagnostic est indicatif et ne remplace pas un audit juridique complet.  
+        Pour un accompagnement sur mesure et la mise en conformité de vos pratiques RSE, contactez <strong>STV Law</strong>.
+      </div>
+    </div>
+
+    <!-- Contenu Recommendations -->
+    <div id="recommendations" class="tab-content">
+      <div id="recommendation-content"></div>
+    </div>
+
+    <div class="footer-links">
+      <button id="restart" class="secondary">← Refaire le diagnostic</button>
+      <button id="export">Télécharger mes résultats (PDF)</button>
+      <a id="contact" href="contact.html" class="cta">Contacter STV Law</a>
+    </div>
+  </div>
+
+  <script>
+    const LS_PREFIX = 'ethiceval_';
+    function lsAll() {
+      const out = {};
+      for (let i=0;i<localStorage.length;i++) {
+        const rawKey = localStorage.key(i);
+        if (!rawKey.startsWith(LS_PREFIX)) continue;
+        const key = rawKey.substring(LS_PREFIX.length);
+        out[key] = localStorage.getItem(rawKey);
+      }
+      return out;
+    }
+
+    const answers = lsAll();
+
+    function parseScore(obj) {
+      let total=0, max=0;
+      for(const [k,v] of Object.entries(obj)){
+        if(["nom_entreprise","secteur","effectif","ca","creation"].includes(k)) continue;
+        if(v==="oui") total+=2;
+        else if(v==="encours") total+=1;
+        if(["oui","encours","non"].includes(v)) max+=2;
+      }
+      return max>0? Math.round((total/max)*100):0;
+    }
+
+    const score = parseScore(answers);
+
+    const circle = document.getElementById("scoreCircle");
+    const companyName = document.getElementById("companyName");
+    const scoreText = document.getElementById("scoreText");
+    const details = document.getElementById("details");
+    const syntheseEncadre = document.getElementById("synthese-encadre");
+    const recContent = document.getElementById("recommendation-content");
+
+    companyName.textContent = answers.nom_entreprise || "Votre entreprise";
+
+    // Niveau global
+    let levelClass="", levelText="", syntheseText="";
+    if(score<40){
+      levelClass="score-low";
+      levelText="Niveau faible – Risques de non-conformité importants.";
+      syntheseText=`<div class="encadre-synthese"><strong>Vous présentez un niveau de maturité RSE faible.</strong> Plusieurs obligations légales (loi PACTE, CSRD, devoir de vigilance) ne semblent pas respectées ou documentées. 👉 <strong>STV Law</strong> peut vous accompagner pour structurer votre politique RSE, réduire les risques juridiques et réputationnels, et sécuriser votre conformité.</div>`;
+    } else if(score<70){
+      levelClass="score-med";
+      levelText="Niveau intermédiaire – Démarche amorcée mais à consolider.";
+      syntheseText=`<div class="encadre-synthese"><strong>Vous avez initié des démarches positives, mais votre dispositif RSE reste partiel ou insuffisamment documenté.</strong> Plusieurs aspects (reporting, politique environnementale, égalité) doivent être consolidés pour répondre aux nouvelles attentes (CSRD, devoir de vigilance…). 👉 <strong>STV Law</strong> peut vous aider à formaliser vos engagements et sécuriser votre conformité juridique.</div>`;
+    } else if(score<90){
+      levelClass="score-high";
+      levelText="Niveau avancé – Structure solide à maintenir.";
+      syntheseText=`<div class="encadre-synthese"><strong>Votre dispositif RSE est globalement solide.</strong> Une revue juridique et documentaire régulière reste nécessaire pour garantir la conformité aux standards européens (CSRD / ESRS) et limiter tout risque de non-conformité. 👉 <strong>STV Law</strong> peut assurer la mise à jour continue et la vérification de conformité.</div>`;
+    } else {
+      levelClass="score-top";
+      levelText="Niveau exemplaire – Gouvernance RSE intégrée.";
+      syntheseText=`<div class="encadre-synthese"><strong>Félicitations !</strong> Votre politique RSE est exemplaire et intégrée dans la gouvernance d’entreprise. Vous pouvez envisager une valorisation via certification ou label. 👉 <strong>STV Law</strong> vous accompagne dans le maintien et la valorisation juridique de votre conformité.</div>`;
+    }
+
+    circle.textContent = score+"%";
+    circle.classList.add(levelClass);
+    scoreText.textContent = levelText;
+
+    // Détail par thématique
+    const THEMES={
+      "Gouvernance & éthique":["code_conduite","alerte","formation_dir","raison_etre","comite_rse","carto_risques"],
+      "Environnement":["ges","plan_carbone","reporting_esrs","achats_responsables","biodiversite"],
+      "Social & capital humain":["egalite","diversite","sst","dialogue_social","formation_continue"],
+      "Fournisseurs & chaîne d'approvisionnement":["fournisseurs","devoir_vigilance","audits_fourn","clauses_contrat"]
+    };
+
+    const themeScores={};
+    Object.entries(THEMES).forEach(([theme, keys])=>{
+      let themeTotal=0, themeMax=0;
+      keys.forEach(k=>{
+        const v=answers[k];
+        if(v==="oui") themeTotal+=2;
+        else if(v==="encours") themeTotal+=1;
+        if(["oui","encours","non"].includes(v)) themeMax+=2;
+      });
+      const pct = themeMax>0? Math.round((themeTotal/themeMax)*100):0;
+      themeScores[theme]=pct;
+
+      const section = document.createElement("div");
+      section.innerHTML = `
+        <h2>${theme}</h2>
+        <div class="bar"><div class="bar-fill" style="width:${pct}%"></div></div>
+        <div>${pct}%</div>
+        ${pct<60? `<div class="encadre-risque"><strong>Attention :</strong> Score faible sur cette thématique. Risques juridiques et réputationnels liés aux obligations légales (PACTE, CSRD, devoir de vigilance).</div>` : ''}
+      `;
+      details.appendChild(section);
+    });
+
+    // Encadré synthèse global
+    syntheseEncadre.innerHTML = syntheseText;
+
+    // Recommendations contextualisées
+    const RECO={
+      "Gouvernance & éthique":[
+        "Formaliser un code de conduite / charte éthique obligatoire pour tous les collaborateurs.",
+        "Mettre en place un dispositif de signalement sécurisé pour les lanceurs d’alerte.",
+        "Structurer un comité RSE ou de durabilité avec participation de la direction.",
+        "Documenter la cartographie des risques RSE et la mettre à jour annuellement."
+      ],
+      "Environnement":[
+        "Réaliser un Bilan Carbone complet (scopes 1, 2 et 3).",
+        "Formaliser un plan de réduction des émissions avec objectifs chiffrés.",
+        "Mettre en place un reporting conforme CSRD / ESRS.",
+        "Intégrer des critères environnementaux aux achats."
+      ],
+      "Social & capital humain":[
+        "Mettre en place un plan d’égalité professionnelle avec indicateurs de suivi.",
+        "Développer une politique diversité & inclusion documentée.",
+        "Formaliser un programme santé / sécurité au travail (SST).",
+        "Structurer le dialogue social pour réduire les risques contentieux."
+      ],
+      "Fournisseurs & chaîne d'approvisionnement":[
+        "Exiger une charte RSE signée par les fournisseurs stratégiques.",
+        "Mettre en place un plan de vigilance fournisseurs avec audits réguliers.",
+        "Intégrer des clauses contractuelles RSE pour sécuriser les relations."
+      ]
+    };
+
+    let recHtml='';
+    Object.entries(themeScores).forEach(([theme,pct])=>{
+      recHtml+=`<h2>${theme}</h2>`;
+      const actions=RECO[theme]||[];
+      let subset=[];
+      if(pct<40) subset=actions.slice(0,4);
+      else if(pct<70) subset=actions.slice(0,3);
+      else if(pct<90) subset=actions.slice(0,2);
+      else subset=actions.slice(0,1);
+      subset.forEach(a=>{
+        recHtml+=`<div class="recommendation-box">${a}</div>`;
+      });
+    });
+    recContent.innerHTML = recHtml;
+
+    // Onglets
+    const tabs = document.querySelectorAll(".tab");
+    const tabContents = document.querySelectorAll(".tab-content");
+    tabs.forEach(tab=>{
+      tab.addEventListener("click", ()=>{
+        tabs.forEach(t=>t.classList.remove("active"));
+        tab.classList.add("active");
+        const target = tab.dataset.tab;
+        tabContents.forEach(tc=>{
+          tc.classList.toggle("active", tc.id===target);
+        });
+      });
+    });
+
+    // Footer actions
+    document.getElementById("restart").addEventListener("click", ()=>{
+      if(confirm("Voulez-vous effacer vos réponses et recommencer ?")){
+        Object.keys(localStorage).forEach(k=>{if(k.startsWith(LS_PREFIX)) localStorage.removeItem(k);});
+        window.location.href="index.html";
+      }
+    });
+
+    document.getElementById("export").addEventListener("click", ()=>window.print());
+  </script>
+</body>
+</html>

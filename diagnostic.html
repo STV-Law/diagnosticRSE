@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Diagnostic RSE – EthicEval</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin:0; background:#f7faf6; color:#163b2b; }
+    .container { max-width:920px; margin:36px auto; padding:28px; background:#fff; border-radius:12px; box-shadow:0 6px 24px rgba(12,34,24,0.06); }
+    h1 { margin:0 0 8px 0; font-size:1.4rem; }
+    p.lead { margin:8px 0 20px 0; color:#2f6b53; }
+    .confidential { background:#f1fff6; border-left:4px solid #2d6a4f; padding:14px; border-radius:8px; margin-bottom:18px; }
+    .confidential small { display:block; color:#2f6b53; margin-top:6px; }
+    form { margin-top:10px; }
+    .progress-bar { height:10px; background:#e8f6ee; border-radius:999px; overflow:hidden; margin-bottom:22px; }
+    .progress { height:10px; background:#2d6a4f; width:0%; transition:width .35s ease; }
+    .step { display:none; }
+    .step.active { display:block; }
+    .group { margin-bottom:18px; }
+    .group .title { font-weight:700; margin-bottom:6px; }
+    .options label { margin-right:14px; cursor:pointer; }
+    input[type="text"], input[type="number"], input[type="date"], select, textarea, input[type="file"] { width:100%; padding:10px; border-radius:8px; border:1px solid #dbeede; box-sizing:border-box; font-size:0.95rem; }
+    .nav { display:flex; justify-content:space-between; align-items:center; margin-top:20px; gap:8px; flex-wrap:wrap; }
+    button { background:#1b4332; color:white; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; font-weight:700; }
+    button.secondary { background:#e9f6ef; color:#1b4332; border:1px solid #dbeede; }
+    .helper { display:inline-block; margin-left:8px; padding:4px 8px; border-radius:8px; font-size:0.85rem; background:#f1fff6; border:1px solid #dbeede; color:#2f6b53; cursor:default; }
+    details { margin-top:14px; }
+    .muted { color:#6a8b77; font-size:0.95rem; }
+    .hidden { display:none !important; }
+    .alert { background:#fff4e6; border:1px solid #ffd8a8; padding:12px; border-radius:8px; color:#6a3b00; margin-bottom:12px; }
+    .small { font-size:0.9rem; color:#5a7c6a; }
+    .tag { display:inline-block; padding:6px 10px; border-radius:999px; background:#eef7f0; color:#1b4332; font-weight:700; margin-right:8px; font-size:0.85rem; }
+    .faq details { margin-top:10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Diagnostic RSE – EthicEval</h1>
+    <p class="lead">Répondez au questionnaire pour obtenir un premier diagnostic de maturité RSE. Vos réponses sont confidentielles.</p>
+
+    <div class="confidential" role="region" aria-label="Confidentialité">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="tag">🔒 Confidentiel</div>
+        <div>
+          <strong>Confidentialité & secret professionnel</strong>
+          <small>Les informations que vous saisirez sont protégées par le secret professionnel et la déontologie. Les données restent stockées localement et ne sont transmises à aucun tiers sans votre consentement explicite.</small>
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <label style="display:flex;gap:8px;align-items:center">
+          <input id="ack_confidential" type="checkbox">
+          <span class="small">Je reconnais avoir lu l'information de confidentialité et j'accepte que mes réponses soient utilisées pour l'analyse.</span>
+        </label>
+      </div>
+    </div>
+
+    <form id="diagnosticForm" autocomplete="off" novalidate>
+      <div class="progress-bar" aria-hidden="true"><div class="progress" id="progress"></div></div>
+
+      <!-- ========== ÉTAPE 1 : INFOS GÉNÉRALES ========== -->
+      <div class="step active" data-step="1" id="step-1">
+        <h2>1 • Informations générales</h2>
+        <div class="group">
+          <div class="title">Nom de l'entreprise</div>
+          <input name="nom_entreprise" type="text" placeholder="Ex : STV Law">
+        </div>
+        <div class="group">
+          <div class="title">Secteur d'activité</div>
+          <select name="secteur">
+            <option value="">Sélectionner...</option>
+            <option value="industrie">Industrie</option>
+            <option value="services">Services</option>
+            <option value="commerce">Commerce</option>
+            <option value="public">Secteur public / parapublic</option>
+            <option value="autre">Autre</option>
+          </select>
+        </div>
+        <div class="group" style="display:grid;grid-template-columns:1fr 1fr; gap:12px;">
+          <div>
+            <div class="title">Effectif (nombre de salariés)</div>
+            <input name="effectif" id="effectif" type="number" min="0" placeholder="Ex : 120">
+          </div>
+          <div>
+            <div class="title">Chiffre d'affaires annuel (€)</div>
+            <input name="ca" id="ca" type="text" inputmode="numeric" placeholder="Ex : 3200000">
+          </div>
+        </div>
+        <div class="group">
+          <div class="title">Année de création</div>
+          <input name="creation" type="number" min="1800" max="2100" placeholder="Ex : 2015">
+        </div>
+        <div class="group">
+          <div class="title">Statut / Particularités</div>
+          <label><input type="checkbox" name="statut_cote" value="oui"> Société cotée</label>
+          <label style="margin-left:12px"><input type="checkbox" name="statut_filiale" value="oui"> Filiale (groupe)</label>
+        </div>
+        <div class="nav">
+          <div class="muted">Les informations fournies restent confidentielles.</div>
+          <div>
+            <button type="button" id="next-to-gov" class="secondary">Étape suivante →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== ÉTAPE 2 : GOUVERNANCE & ÉTHIQUE ========== -->
+      <div class="step" data-step="2" id="step-2">
+        <h2>2 • Gouvernance & éthique</h2>
+        <div class="group">
+          <div class="title">Disposez-vous d'un code de conduite / charte éthique ?</div>
+          <div class="options">
+            <label><input type="radio" name="code_conduite" value="oui"> Oui</label>
+            <label><input type="radio" name="code_conduite" value="encours"> En cours</label>
+            <label><input type="radio" name="code_conduite" value="non"> Non</label>
+          </div>
+        </div>
+        <div class="group">
+          <div class="title">Procédure de signalement (lanceurs d'alerte) ?</div>
+          <div class="options">
+            <label><input type="radio" name="alerte" value="oui"> Oui</label>
+            <label><input type="radio" name="alerte" value="non"> Non</label>
+          </div>
+        </div>
+        <div class="group">
+          <div class="title">Formation RSE / conformité pour la direction ?</div>
+          <div class="options">
+            <label><input type="radio" name="formation_dir" value="oui"> Oui</label>
+            <label><input type="radio" name="formation_dir" value="non"> Non</label>
+          </div>
+        </div>
+        <div class="group">
+          <div class="title">Raison d'être ou société à mission ?</div>
+          <div class="options">
+            <label><input type="radio" name="raison_etre" value="oui"> Oui</label>
+            <label><input type="radio" name="raison_etre" value="non"> Non</label>
+          </div>
+        </div>
+        <div class="group" data-min-employees="250" data-min-ca="40000000">
+          <div class="title">Comité RSE / comité de durabilité ?</div>
+          <div class="options">
+            <label><input type="radio" name="comite_rse" value="oui"> Oui</label>
+            <label><input type="radio" name="comite_rse" value="non"> Non</label>
+          </div>
+        </div>
+        <div class="group" data-min-employees="250" data-min-ca="40000000">
+          <div class="title">Cartographie des risques RSE ?</div>
+          <div class="options">
+            <label><input type="radio" name="carto_risques" value="oui"> Oui</label>
+            <label><input type="radio" name="carto_risques" value="non"> Non</label>
+          </div>
+        </div>
+        <div class="nav">
+          <button type="button" id="back-to-1" class="secondary">← Retour</button>
+          <button type="button" id="next-to-env">Étape suivante →</button>
+        </div>
+      </div>
+
+      <!-- ========== ÉTAPE 3 : ENVIRONNEMENT ========== -->
+      <div class="step" data-step="3" id="step-3">
+        <h2>3 • Environnement</h2>
+        <div class="group">
+          <div class="title">Mesurez-vous vos émissions de gaz à effet de serre (Bilan GES) ?</div>
+          <div class="options">
+            <label><input type="radio" name="ges" value="oui"> Oui - scopes 1/2/3</label>
+            <label><input type="radio" name="ges" value="partiel"> Partiellement</label>
+            <label><input type="radio" name="ges" value="non"> Non</label>
+          </div>
+        </div>
+        <div class="group">
+          <div class="title">Plan de réduction des émissions et objectifs chiffrés ?</div>
+          <div class="options">
+            <label><input type="radio" name="plan_carbone" value="oui"> Oui</label>
+            <label><input type="radio" name="plan_carbone" value="non"> Non</label>
+          </div>
+        </div>
+        <div class="group" data-min-employees="250" data-min-ca="40000000">
+          <div class="title">Reporting selon standards CSRD / ESRS ?</div>
+          <div class="options">
+            <label><input type="radio" name="reporting_esrs" value="oui"> Oui</label>
+            <label><input type="radio" name="reporting_esrs" value="non"> Non</label>
+          </div>
+        </div>
+        <div class="group">
+          <div class="title">Politique achats responsables / critères environnementaux ?</div>
+          <div class="options">
+            <label><input type="radio" name="achats_responsables" value="oui"> Oui</label>
+            <label><input type="radio" name="achats_responsables" value="non"> Non</label>
+          </div>
+        </div>
+        <div class="group">
+          <div class="title">Politique biodiversité / évaluation d'impact environnemental ?</div>
+          <div class="options">
+            <label><input type="radio" name="biodiversite" value="oui"> Oui</label>
+            <label><input type="radio" name="biodiversite" value="non"> Non</label>
+          </div>
+        </div>
+        <div class="nav">
+          <button type="button" id="back-to-2" class="secondary">← Retour</button>
+          <button type="button" id="next-to-social">Étape suivante →</button>
+        </div>
+      </div>
+
+      <!-- ========== ÉTAPE 4 : SOCIAL & CAPITAL HUMAIN ========== -->
+      <div class="step" data-step="4" id="step-4">
+        <h2>4 • Social & capital humain</h2>
+        <div class="group">
+          <div class="title">Plan d'égalité professionnelle ?</div>
+          <div class="options">
+            <label><input type="radio" name="egalite" value="oui"> Oui</label>
+            <label><input type="radio" name="egalite" value="encours"> En cours</label>
+            <label><input type="radio" name="egalite" value="non"> Non</label>
+          </div>
+        </div>
+        <div class="group">
+          <div class="title">Politique diversité & inclusion ?</div>
+          <div class="options">
+            <label><input type="radio" name="diversite" value="oui"> Oui</label>
+            <label><input type="radio" name="diversite" value="non"> Non</label>
+          </div>
+        </div>
+        <div class="group">
+          <div class="title">Actions prévention santé & sécurité (SST, RPS) ?</div>
+          <div class="options">
+            <label><input type="radio" name="sst" value="oui"> Oui</label>
+            <label><input type="radio" name="sst" value="non"> Non</label>
+          </div>
+        </div>
+        <div class="group" data-min-employees="250" data-min-ca="40000000">
+          <div class="title">Dialogue social structuré / négociations QVT ?</div>
+          <div class="options">
+            <label><input type="radio" name="dialogue_social" value="oui"> Oui</label>
+            <label><input type="radio" name="dialogue_social" value="non"> Non</label>
+          </div>
+        </div>
+        <div class="group">
+          <div class="title">Programmes de formation continue / upskilling ?</div>
+          <div class="options">
+            <label><input type="radio" name="formation_continue" value="oui"> Oui</label>
+            <label><input type="radio" name="formation_continue" value="non"> Non</label>
+          </div>
+        </div>
+        <div class="nav">
+          <button type="button" id="back-to-3" class="secondary">← Retour</button>
+          <button type="button" id="next-to-fourn">Étape suivante →</button>
+        </div>
+      </div>
+
+      <!-- ========== ÉTAPE 5 : FOURNISSEURS & CHAÎNE D'APPROVISIONNEMENT ========== -->
+      <div class="step" data-step="5" id="step-5">
+        <h2>5 • Fournisseurs & chaîne d'approvisionnement</h2>
+        <div class="group">
+          <div class="title">Imposez-vous des critères RSE à vos fournisseurs ?</div>
+          <div class="options">
+            <label><input type="radio" name="fournisseurs" value="oui"> Oui</label>
+            <label><input type="radio" name="fournisseurs" value="encours"> En cours</label>
+            <label><input type="radio" name="fournisseurs" value="non"> Non</label>
+          </div>
+        </div>
+        <div class="group" data-min-employees="500" data-min-ca="40000000">
+          <div class="title">Plan de vigilance / cartographie risques fournisseurs ?</div>
+          <div class="options">
+            <label><input type="radio" name="devoir_vigilance" value="oui"> Oui</label>
+            <label><input type="radio" name="devoir_vigilance" value="non"> Non</label>
+          </div>
+        </div>
+        <div class="group">
+          <div class="title">Réalisez-vous des audits RSE / questionnaires auprès de vos fournisseurs ?</div>
+          <div class="options">
+            <label><input type="radio" name="audit_fournisseurs" value="oui"> Oui</label>
+            <label><input type="radio" name="audit_fournisseurs" value="non"> Non</label>
+          </div>
+        </div>
+        <div class="nav">
+          <button type="button" id="back-to-4" class="secondary">← Retour</button>
+          <button type="button" id="next-to-docs">Étape suivante →</button>
+        </div>
+      </div>
+
+      <!-- ========== ÉTAPE 6 : DÉPOSEZ VOS DOCUMENTS RSE ========== -->
+      <div class="step" data-step="6" id="step-6">
+        <h2>6 • Déposez vos documents RSE</h2>
+        <p class="lead">Téléversez vos documents (charte éthique, bilan CO₂, règlement intérieur…). L’IA les analysera pour identifier vos points forts et vos axes d’amélioration.</p>
+
+        <div class="group">
+          <input type="file" name="docs_rse" id="docs_rse" multiple>
+        </div>
+
+        <div class="nav">
+          <button type="button" id="back-to-5" class="secondary">← Retour</button>
+          <button type="button" id="skip-docs" class="secondary">Passer cette étape →</button>
+          <button type="submit" id="submit-docs">Terminer →</button>
+        </div>
+
+        <div class="faq">
+          <details>
+            <summary>Quels documents déposer ?</summary>
+            <p>Charte éthique, bilan CO₂, règlement intérieur, politiques RSE ou tout document permettant d’évaluer vos pratiques.</p>
+          </details>
+          <details>
+            <summary>Est-ce confidentiel ?</summary>
+            <p>Oui. Tous les documents restent stockés localement et ne sont transmis à aucun tiers sans votre consentement.</p>
+          </details>
+        </div>
+      </div>
+
+    </form>
+
+    <details style="margin-top:16px;">
+      <summary>ℹ️ Notes réglementaires (exemples)</summary>
+      <p class="small">Exemples d'obligations : PACTE, devoir de vigilance, CSRD/ESRS. Les seuils affichés servent à personnaliser le diagnostic et ne remplacent pas un audit juridique.</p>
+    </details>
+
+  </div>
+
+  <script>
+    const $ = (s, ctx=document) => ctx.querySelector(s);
+    const $$ = (s, ctx=document) => Array.from(ctx.querySelectorAll(s));
+    const steps = Array.from($$('.step'));
+    const progressEl = $('#progress');
+    let stepIndex = 0;
+    const LS_PREFIX = 'ethiceval_';
+
+    function lsSet(k, v) { try { localStorage.setItem(LS_PREFIX + k, v); } catch(e) {} }
+    function lsGet(k) { try { return localStorage.getItem(LS_PREFIX + k); } catch(e){ return null; } }
+    function lsAll() { const out = {}; try { for (let i=0;i<localStorage.length;i++) { const rawKey = localStorage.key(i); if (!rawKey.startsWith(LS_PREFIX)) continue; const key = rawKey.substring(LS_PREFIX.length); out[key] = localStorage.getItem(rawKey); } } catch(e){} return out; }
+
+    function updateProgress() {
+      const pct = Math.round(((stepIndex + 1) / steps.length) * 100);
+      progressEl.style.width = pct + '%';
+    }
+
+    function showStep(index) {
+      stepIndex = index;
+      steps.forEach((s,i) => s.classList.toggle('active', i === index));
+      updateProgress();
+      setTimeout(() => {
+        const first = steps[index].querySelector('input,select,textarea,button');
+        if (first) first.focus();
+      }, 100);
+      applyConditionalVisibility();
+    }
+
+    function parseNumeric(val) { if (!val) return 0; const cleaned = String(val).replace(/[^\d.-]/g,''); const n = parseFloat(cleaned); return isNaN(n) ? 0 : n; }
+    function getProfile() { const savedEffectif = lsGet('effectif') || $('#effectif').value || ''; const savedCa = lsGet('ca') || $('#ca').value || ''; const effectif = parseInt(savedEffectif) || 0; const ca = parseNumeric(savedCa) || 0; return { effectif, ca }; }
+
+    function applyConditionalVisibility() {
+      const { effectif, ca } = getProfile();
+      $$('[data-min-employees], [data-min-ca]').forEach(el => {
+        const minEmp = el.dataset.minEmployees ? parseInt(el.dataset.minEmployees) : null;
+        const minCa = el.dataset.minCa ? parseFloat(el.dataset.minCa) : null;
+        let show = true;
+        if (minEmp && minCa) { show = (effectif >= minEmp) || (ca >= minCa); }
+        else if (minEmp) { show = (effectif >= minEmp); }
+        else if (minCa) { show = (ca >= minCa); }
+        el.style.display = show ? 'block' : 'none';
+      });
+    }
+
+    function restoreAll() {
+      const all = lsAll();
+      Object.keys(all).forEach(k => {
+        const val = all[k];
+        const el = document.querySelector(`[name="${k}"]`);
+        if (!el) return;
+        if (el.type === 'radio') {
+          const r = document.querySelector(`[name="${k}"][value="${val}"]`);
+          if (r) r.checked = true;
+        } else if (el.type === 'checkbox') {
+          if (el.value && el.value === val) el.checked = true;
+          else el.checked = (val === 'true' || val === '1' || val === 'on');
+        } else { el.value = val; }
+      });
+      applyConditionalVisibility();
+    }
+
+    function onInputChange(e) {
+      const el = e.target;
+      if (!el.name) return;
+      if (el.type === 'radio') { if (el.checked) lsSet(el.name, el.value); }
+      else if (el.type === 'checkbox') { lsSet(el.name, el.checked ? (el.value || 'true') : 'false'); }
+      else { lsSet(el.name, el.value); }
+      if (el.name === 'effectif' || el.name === 'ca') applyConditionalVisibility();
+    }
+
+    // Navigation boutons
+    $('#next-to-gov').onclick = () => { if(!$('#ack_confidential').checked){alert("Veuillez accepter la confidentialité.");return;} lsSet('effectif',$('#effectif').value||''); lsSet('ca',$('#ca').value||''); showStep(1); };
+    $('#back-to-1').onclick = () => showStep(0);
+    $('#next-to-env').onclick = () => showStep(2);
+    $('#back-to-2').onclick = () => showStep(1);
+    $('#next-to-social').onclick = () => showStep(3);
+    $('#back-to-3').onclick = () => showStep(2);
+    $('#next-to-fourn').onclick = () => showStep(4);
+    $('#back-to-4').onclick = () => showStep(3);
+    $('#next-to-docs').onclick = () => showStep(5);
+    $('#back-to-5').onclick = () => showStep(4);
+
+    $('#skip-docs').onclick = () => { window.location.href='resultats.html'; };
+    $('#submit-docs').onclick = () => { window.location.href='resultats.html'; };
+
+    document.getElementById('diagnosticForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      if (!$('#ack_confidential').checked) { alert("Veuillez accepter la confidentialité."); return; }
+      $$('input,select,textarea').forEach(el => { if(!el.name) return; if(el.type==='radio'){if(el.checked) lsSet(el.name,el.value);} else if(el.type==='checkbox'){lsSet(el.name,el.checked?(el.value||'true'):'false');} else {lsSet(el.name,el.value);} });
+      window.location.href='resultats.html';
+    });
+
+    $$('input,select,textarea').forEach(inp => { inp.addEventListener('change', onInputChange); inp.addEventListener('input', onInputChange); });
+
+    window.addEventListener('load', () => { restoreAll(); updateProgress(); applyConditionalVisibility(); });
+    document.addEventListener('keydown', function(e){ if(e.key==='Enter'){ const active = steps[stepIndex]; if(document.activeElement && document.activeElement.tagName==='TEXTAREA') return; e.preventDefault(); if(stepIndex<steps.length-1) showStep(stepIndex+1); }});
+  </script>
+</body>
+</html>
