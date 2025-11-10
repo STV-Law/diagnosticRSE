@@ -12,6 +12,7 @@
     p.lead { margin:8px 0 20px 0; color:#2f6b53; }
     .confidential { background:#f1fff6; border-left:4px solid #2d6a4f; padding:14px; border-radius:8px; margin-bottom:18px; }
     .confidential small { display:block; color:#2f6b53; margin-top:6px; }
+    .confidential .learn-more { margin-top:10px; display:inline-block; background:#2d6a4f; color:#fff; padding:6px 12px; border-radius:6px; text-decoration:none; font-size:0.9rem; }
     form { margin-top:10px; }
     .progress-bar { height:10px; background:#e8f6ee; border-radius:999px; overflow:hidden; margin-bottom:22px; }
     .progress { height:10px; background:#2d6a4f; width:0%; transition:width .35s ease; }
@@ -39,6 +40,7 @@
     <h1>Diagnostic RSE – EthicEval</h1>
     <p class="lead">Répondez au questionnaire pour obtenir un premier diagnostic de maturité RSE. Vos réponses sont confidentielles.</p>
 
+    <!-- ======= CONFIDENTIALITÉ À CHAQUE ÉTAPE ======= -->
     <div class="confidential" role="region" aria-label="Confidentialité">
       <div style="display:flex;align-items:center;gap:10px">
         <div class="tag">🔒 Confidentiel</div>
@@ -53,6 +55,7 @@
           <span class="small">Je reconnais avoir lu l'information de confidentialité et j'accepte que mes réponses soient utilisées pour l'analyse.</span>
         </label>
       </div>
+      <a href="politique-confidentialite.html" target="_blank" class="learn-more">En savoir plus</a>
     </div>
 
     <form id="diagnosticForm" autocomplete="off" novalidate>
@@ -266,8 +269,8 @@
         <div class="group">
           <div class="title">Réalisez-vous des audits RSE / questionnaires auprès de vos fournisseurs ?</div>
           <div class="options">
-            <label><input type="radio" name="audit_fournisseurs" value="oui"> Oui</label>
-            <label><input type="radio" name="audit_fournisseurs" value="non"> Non</label>
+            <label><input type="radio" name="audits_fournisseurs" value="oui"> Oui</label>
+            <label><input type="radio" name="audits_fournisseurs" value="non"> Non</label>
           </div>
         </div>
         <div class="nav">
@@ -276,33 +279,19 @@
         </div>
       </div>
 
-      <!-- ========== ÉTAPE 6 : DÉPOSEZ VOS DOCUMENTS RSE ========== -->
+      <!-- ========== ÉTAPE 6 : DOCUMENTS ========== -->
       <div class="step" data-step="6" id="step-6">
-        <h2>6 • Déposez vos documents RSE</h2>
-        <p class="lead">Téléversez vos documents (charte éthique, bilan CO₂, règlement intérieur…). L’IA les analysera pour identifier vos points forts et vos axes d’amélioration.</p>
-
+        <h2>6 • Documents</h2>
         <div class="group">
-          <input type="file" name="docs_rse" id="docs_rse" multiple>
+          <div class="title">Téléchargez vos documents de gouvernance, RSE et conformité (facultatif)</div>
+          <input type="file" name="docs[]" multiple>
         </div>
-
         <div class="nav">
           <button type="button" id="back-to-5" class="secondary">← Retour</button>
-          <button type="button" id="skip-docs" class="secondary">Passer cette étape →</button>
-          <button type="submit" id="submit-docs">Terminer →</button>
-        </div>
-
-        <div class="faq">
-          <details>
-            <summary>Quels documents déposer ?</summary>
-            <p>Charte éthique, bilan CO₂, règlement intérieur, politiques RSE ou tout document permettant d’évaluer vos pratiques.</p>
-          </details>
-          <details>
-            <summary>Est-ce confidentiel ?</summary>
-            <p>Oui. Tous les documents restent stockés localement et ne sont transmis à aucun tiers sans votre consentement.</p>
-          </details>
+          <button type="button" id="skip-docs" class="secondary">Passer →</button>
+          <button type="submit" id="submit-docs">Terminer</button>
         </div>
       </div>
-
     </form>
 
     <details style="margin-top:16px;">
@@ -324,65 +313,19 @@
     function lsGet(k) { try { return localStorage.getItem(LS_PREFIX + k); } catch(e){ return null; } }
     function lsAll() { const out = {}; try { for (let i=0;i<localStorage.length;i++) { const rawKey = localStorage.key(i); if (!rawKey.startsWith(LS_PREFIX)) continue; const key = rawKey.substring(LS_PREFIX.length); out[key] = localStorage.getItem(rawKey); } } catch(e){} return out; }
 
-    function updateProgress() {
-      const pct = Math.round(((stepIndex + 1) / steps.length) * 100);
-      progressEl.style.width = pct + '%';
-    }
+    function updateProgress() { const pct = Math.round(((stepIndex + 1) / steps.length) * 100); progressEl.style.width = pct + '%'; }
 
-    function showStep(index) {
-      stepIndex = index;
-      steps.forEach((s,i) => s.classList.toggle('active', i === index));
-      updateProgress();
-      setTimeout(() => {
-        const first = steps[index].querySelector('input,select,textarea,button');
-        if (first) first.focus();
-      }, 100);
-      applyConditionalVisibility();
-    }
+    function showStep(index) { stepIndex = index; steps.forEach((s,i) => s.classList.toggle('active', i === index)); updateProgress(); setTimeout(() => { const first = steps[index].querySelector('input,select,textarea,button'); if (first) first.focus(); }, 100); applyConditionalVisibility(); }
 
     function parseNumeric(val) { if (!val) return 0; const cleaned = String(val).replace(/[^\d.-]/g,''); const n = parseFloat(cleaned); return isNaN(n) ? 0 : n; }
     function getProfile() { const savedEffectif = lsGet('effectif') || $('#effectif').value || ''; const savedCa = lsGet('ca') || $('#ca').value || ''; const effectif = parseInt(savedEffectif) || 0; const ca = parseNumeric(savedCa) || 0; return { effectif, ca }; }
 
-    function applyConditionalVisibility() {
-      const { effectif, ca } = getProfile();
-      $$('[data-min-employees], [data-min-ca]').forEach(el => {
-        const minEmp = el.dataset.minEmployees ? parseInt(el.dataset.minEmployees) : null;
-        const minCa = el.dataset.minCa ? parseFloat(el.dataset.minCa) : null;
-        let show = true;
-        if (minEmp && minCa) { show = (effectif >= minEmp) || (ca >= minCa); }
-        else if (minEmp) { show = (effectif >= minEmp); }
-        else if (minCa) { show = (ca >= minCa); }
-        el.style.display = show ? 'block' : 'none';
-      });
-    }
+    function applyConditionalVisibility() { const { effectif, ca } = getProfile(); $$('[data-min-employees], [data-min-ca]').forEach(el => { const minEmp = el.dataset.minEmployees ? parseInt(el.dataset.minEmployees) : null; const minCa = el.dataset.minCa ? parseFloat(el.dataset.minCa) : null; let show = true; if (minEmp && minCa) { show = (effectif >= minEmp) || (ca >= minCa); } else if (minEmp) { show = (effectif >= minEmp); } else if (minCa) { show = (ca >= minCa); } el.style.display = show ? 'block' : 'none'; }); }
 
-    function restoreAll() {
-      const all = lsAll();
-      Object.keys(all).forEach(k => {
-        const val = all[k];
-        const el = document.querySelector(`[name="${k}"]`);
-        if (!el) return;
-        if (el.type === 'radio') {
-          const r = document.querySelector(`[name="${k}"][value="${val}"]`);
-          if (r) r.checked = true;
-        } else if (el.type === 'checkbox') {
-          if (el.value && el.value === val) el.checked = true;
-          else el.checked = (val === 'true' || val === '1' || val === 'on');
-        } else { el.value = val; }
-      });
-      applyConditionalVisibility();
-    }
+    function restoreAll() { const all = lsAll(); Object.keys(all).forEach(k => { const val = all[k]; const el = document.querySelector(`[name="${k}"]`); if (!el) return; if (el.type === 'radio') { const r = document.querySelector(`[name="${k}"][value="${val}"]`); if (r) r.checked = true; } else if (el.type === 'checkbox') { if (el.value && el.value === val) el.checked = true; else el.checked = (val === 'true' || val === '1' || val === 'on'); } else { el.value = val; } }); applyConditionalVisibility(); }
 
-    function onInputChange(e) {
-      const el = e.target;
-      if (!el.name) return;
-      if (el.type === 'radio') { if (el.checked) lsSet(el.name, el.value); }
-      else if (el.type === 'checkbox') { lsSet(el.name, el.checked ? (el.value || 'true') : 'false'); }
-      else { lsSet(el.name, el.value); }
-      if (el.name === 'effectif' || el.name === 'ca') applyConditionalVisibility();
-    }
+    function onInputChange(e) { const el = e.target; if (!el.name) return; if (el.type === 'radio') { if (el.checked) lsSet(el.name, el.value); } else if (el.type === 'checkbox') { lsSet(el.name, el.checked ? (el.value || 'true') : 'false'); } else { lsSet(el.name, el.value); } if (el.name === 'effectif' || el.name === 'ca') applyConditionalVisibility(); }
 
-    // Navigation boutons
     $('#next-to-gov').onclick = () => { if(!$('#ack_confidential').checked){alert("Veuillez accepter la confidentialité.");return;} lsSet('effectif',$('#effectif').value||''); lsSet('ca',$('#ca').value||''); showStep(1); };
     $('#back-to-1').onclick = () => showStep(0);
     $('#next-to-env').onclick = () => showStep(2);
@@ -393,19 +336,10 @@
     $('#back-to-4').onclick = () => showStep(3);
     $('#next-to-docs').onclick = () => showStep(5);
     $('#back-to-5').onclick = () => showStep(4);
-
     $('#skip-docs').onclick = () => { window.location.href='resultats.html'; };
     $('#submit-docs').onclick = () => { window.location.href='resultats.html'; };
-
-    document.getElementById('diagnosticForm').addEventListener('submit', function(e){
-      e.preventDefault();
-      if (!$('#ack_confidential').checked) { alert("Veuillez accepter la confidentialité."); return; }
-      $$('input,select,textarea').forEach(el => { if(!el.name) return; if(el.type==='radio'){if(el.checked) lsSet(el.name,el.value);} else if(el.type==='checkbox'){lsSet(el.name,el.checked?(el.value||'true'):'false');} else {lsSet(el.name,el.value);} });
-      window.location.href='resultats.html';
-    });
-
+    document.getElementById('diagnosticForm').addEventListener('submit', function(e){ e.preventDefault(); if (!$('#ack_confidential').checked) { alert("Veuillez accepter la confidentialité."); return; } $$('input,select,textarea').forEach(el => { if(!el.name) return; if(el.type==='radio'){if(el.checked) lsSet(el.name,el.value);} else if(el.type==='checkbox'){lsSet(el.name,el.checked?(el.value||'true'):'false');} else {lsSet(el.name,el.value);} }); window.location.href='resultats.html'; });
     $$('input,select,textarea').forEach(inp => { inp.addEventListener('change', onInputChange); inp.addEventListener('input', onInputChange); });
-
     window.addEventListener('load', () => { restoreAll(); updateProgress(); applyConditionalVisibility(); });
     document.addEventListener('keydown', function(e){ if(e.key==='Enter'){ const active = steps[stepIndex]; if(document.activeElement && document.activeElement.tagName==='TEXTAREA') return; e.preventDefault(); if(stepIndex<steps.length-1) showStep(stepIndex+1); }});
   </script>
